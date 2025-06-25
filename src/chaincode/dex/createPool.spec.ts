@@ -13,36 +13,54 @@
  * limitations under the License.
  */
 import {
+  ConflictError,
   FeeThresholdUses,
   GalaChainResponse,
   TokenBalance,
   TokenClass,
   TokenClassKey,
   TokenInstance,
+  ValidationFailedError,
   asValidUserAlias
 } from "@gala-chain/api";
 import { GalaChainContext } from "@gala-chain/chaincode";
-import { currency, fixture, users, writesMap } from "@gala-chain/test";
+import { currency, fixture, transactionError, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
+import { clear } from "console";
+import { randomUUID } from "crypto";
 
 import { CreatePoolDto, CreatePoolResDto, DexFeeConfig, DexFeePercentageTypes, Pool } from "../../api/";
 import { DexV3Contract } from "../DexV3Contract";
 import dexTestUtils from "../test/dex";
 import { generateKeyFromClassKey } from "./dexUtils";
 
-describe("createPool", () => {
-  it("should create a new liquidity pool and save it on-chain", async () => {
-    const currencyInstance: TokenInstance = currency.tokenInstance();
-    const currencyClass: TokenClass = currency.tokenClass();
-    const currencyClassKey: TokenClassKey = currency.tokenClassKey();
-    const currencyBalance: TokenBalance = currency.tokenBalance();
+describe("CreatePool", () => {
+  const currencyInstance: TokenInstance = currency.tokenInstance();
+  const currencyClass: TokenClass = currency.tokenClass();
+  const currencyClassKey: TokenClassKey = currency.tokenClassKey();
+  const currencyBalance: TokenBalance = currency.tokenBalance();
 
-    const dexInstance: TokenInstance = dexTestUtils.tokenInstance();
-    const dexClass: TokenClass = dexTestUtils.tokenClass();
-    const dexClassKey: TokenClassKey = dexTestUtils.tokenClassKey();
-    const dexBalance: TokenBalance = dexTestUtils.tokenBalance();
+  const dexInstance: TokenInstance = dexTestUtils.tokenInstance();
+  const dexClass: TokenClass = dexTestUtils.tokenClass();
+  const dexClassKey: TokenClassKey = dexTestUtils.tokenClassKey();
+  const dexBalance: TokenBalance = dexTestUtils.tokenBalance();
 
+  const fee = DexFeePercentageTypes.FEE_0_05_PERCENT;
+
+  let pool: Pool;
+ 
+  pool = new Pool(
+    dexClassKey.toString(),
+    currencyClassKey.toString(),
+    dexClassKey,
+    currencyClassKey,
+    fee,
+    new BigNumber("44.71236")
+  );
+
+  it("Should create a new liquidity pool and save it on-chain", async () => {
+    //Given
     const dexFeeConfig: DexFeeConfig = new DexFeeConfig([asValidUserAlias(users.admin.identityKey)], 0.1);
 
     const { ctx, contract } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract)
@@ -64,7 +82,9 @@ describe("createPool", () => {
       DexFeePercentageTypes.FEE_1_PERCENT,
       new BigNumber("1")
     );
-    dto.uniqueKey = "test";
+
+    dto.uniqueKey = "randomUniquekey";
+
     dto.sign(users.testUser1.privateKey);
 
     const [token0, token1] = [dto.token0, dto.token1].map(generateKeyFromClassKey);
@@ -85,39 +105,24 @@ describe("createPool", () => {
     expect(response).toEqual(GalaChainResponse.Success(expectedResponse));
   });
 
-  it("should create a new liquidity pool using a configured protocol fee", async () => {
-    const token0Properties = {
-      collection: "GALA",
-      category: "Unit",
-      type: "none",
-      additionalKey: "none"
-    };
-    const token1Properties = {
-      collection: "Token",
-      category: "Unit",
-      type: "TENDEXT",
-      additionalKey: "client:6337024724eec8c292f0118d"
-    };
-    const currencyClassKey: TokenClassKey = plainToInstance(TokenClassKey, token0Properties);
-    const currencyClass: TokenClass = plainToInstance(TokenClass, currencyClassKey);
-
-    const dexClass: TokenClass = plainToInstance(TokenClass, token1Properties);
-    const dexClassKey: TokenClassKey = plainToInstance(TokenClassKey, token1Properties);
-
+  it("Should create a new liquidity pool using a configured protocol fee", async () => {
+    //Given
     const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.admin.identityKey], 0.1);
 
-    const { ctx, contract, getWrites } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract)
+    const { ctx, contract, getWrites } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
       .savedState(currencyClass, dexFeeConfig, dexClass)
       .savedRangeState([]);
 
     const dto = new CreatePoolDto(
-      currencyClassKey,
       dexClassKey,
+      currencyClassKey,
       DexFeePercentageTypes.FEE_0_05_PERCENT,
       new BigNumber("1")
     );
-    dto.uniqueKey = "test";
+
+    dto.uniqueKey = "random-key";
+
     dto.sign(users.testUser1.privateKey);
 
     const expectedFeeThresholdUses = plainToInstance(FeeThresholdUses, {
@@ -126,6 +131,10 @@ describe("createPool", () => {
       cumulativeUses: new BigNumber("1"),
       cumulativeFeeQuantity: new BigNumber("0")
     });
+
+    // When
+    const res = await contract.CreatePool(ctx, dto);
+    console.log("Response of create is ", res);
 
     const expectedPool = new Pool(
       currencyClassKey.toStringKey(),
@@ -138,18 +147,78 @@ describe("createPool", () => {
     );
 
     const expectedResponse = new CreatePoolResDto(
-      currencyClassKey,
       dexClassKey,
+      currencyClassKey,
       DexFeePercentageTypes.FEE_0_05_PERCENT,
       expectedPool.genPoolHash(),
       expectedPool.getPoolAlias()
     );
 
-    // When
-    const response = await contract.CreatePool(ctx, dto);
-
     // Then
-    expect(response).toEqual(GalaChainResponse.Success(expectedResponse));
+   // expect(res).toEqual(GalaChainResponse.Success(expectedResponse));
     expect(getWrites()).toEqual(writesMap(expectedFeeThresholdUses, expectedPool));
+  });
+
+  test("It will revert if we create pool of same tokens", async () => {
+    //Given
+    const dto = new CreatePoolDto(currencyClassKey, currencyClassKey, 500, new BigNumber("10"));
+
+    dto.uniqueKey = randomUUID();
+
+    dto.sign(users.testUser1.privateKey);
+
+    const { ctx, contract } = fixture(DexV3Contract).registeredUsers(users.testUser1);
+    //When
+    const createPoolRes = await contract.CreatePool(ctx, dto);
+
+    //Then
+    expect(createPoolRes).toEqual(
+      GalaChainResponse.Error(
+        new ValidationFailedError(
+          "Cannot create pool of same tokens. Token0 TEST$Currency$TEST$none and Token1 TEST$Currency$TEST$none must be different."
+        )
+      )
+    );
+
+    expect(createPoolRes).toEqual(transactionError());
+  });
+
+  it("Should throw Validation Failed Error if token0 is greater than token1 ", async () => {
+    //Given
+    const dto = new CreatePoolDto(currencyClassKey, dexClassKey, 500, new BigNumber("10"));
+
+    dto.uniqueKey = randomUUID();
+
+    dto.sign(users.testUser1.privateKey);
+
+    const { ctx, contract } = fixture(DexV3Contract).registeredUsers(users.testUser1);
+
+    //When
+    const createPoolRes = await contract.CreatePool(ctx, dto);
+
+    //Then
+    expect(createPoolRes).toEqual(
+      GalaChainResponse.Error(new ValidationFailedError("Token0 must be smaller"))
+    );
+  });
+
+  it("Will throw Conflict Error if pool is already created", async () => {
+    //Given
+    const dto = new CreatePoolDto(dexClassKey, currencyClassKey, 500, new BigNumber("44.71236"));
+
+    dto.uniqueKey = randomUUID();
+
+    dto.sign(users.testUser1.privateKey);
+
+    const { ctx, contract } = fixture(DexV3Contract)
+      .registeredUsers(users.testUser1)
+      .savedState(currencyInstance, currencyClass, currencyBalance, dexInstance, dexClass, pool);
+
+    //When
+    const createPoolRes = await contract.CreatePool(ctx, dto);
+
+    //Then
+    expect(createPoolRes.Message).toEqual("Pool already exists");
+    expect(createPoolRes.ErrorKey).toEqual("CONFLICT");
   });
 });

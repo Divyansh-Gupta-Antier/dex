@@ -29,7 +29,7 @@ import {
   getLiquidityForAmounts,
   tickToSqrtPrice
 } from "../../api/";
-import { PreConditionFailedError, SlippageToleranceExceededError, f18 } from "../../api/";
+import { SlippageToleranceExceededError, f18 } from "../../api/";
 import { NegativeAmountError } from "./dexError";
 import { getTokenDecimalsFromPool, roundTokenAmount, validateTokenOrder } from "./dexUtils";
 import { fetchOrCreateDexPosition } from "./position.helper";
@@ -81,7 +81,7 @@ export async function addLiquidity(
   // Fetch or create position and tick data
   const poolHash = pool.genPoolHash();
   const poolAlias = pool.getPoolAlias();
-  if (!dto.uniqueKey) throw new PreConditionFailedError("Unique key is required for this function.");
+
   const position = await fetchOrCreateDexPosition(
     ctx,
     pool,

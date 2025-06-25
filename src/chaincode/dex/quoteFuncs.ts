@@ -51,6 +51,7 @@ export async function quoteExactAmount(
   // Generate pool key from tokens and fee tier
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);
+
   if (pool == undefined) throw new NotFoundError("Pool does not exist");
 
   // Define square root price limit as the maximum possible value in trade direction for estimation purposes
@@ -88,6 +89,7 @@ export async function quoteExactAmount(
 
   // Swap steps until input amount is consumed or price limit hit and apply to pool state
   await processSwapSteps(ctx, state, pool, sqrtPriceLimit, exactInput, zeroForOne);
+
   const [amount0, amount1] = pool.swap(zeroForOne, state, amountSpecified);
   const [token0Decimal, token1Decimal] = await getTokenDecimalsFromPool(ctx, pool);
   const roundedToken0Amount = roundTokenAmount(amount0, token0Decimal);
@@ -96,11 +98,13 @@ export async function quoteExactAmount(
   // Check whether pool has enough liquidity to carry out this operation
   if (roundedToken0Amount.isNegative()) {
     const poolTokenBalance = await fetchOrCreateBalance(ctx, pool.getPoolAlias(), pool.token0ClassKey);
+
     if (poolTokenBalance.getQuantityTotal().isLessThan(roundedToken0Amount.abs())) {
       throw new ConflictError("Not enough liquidity available in pool");
     }
   } else {
     const poolTokenBalance = await fetchOrCreateBalance(ctx, pool.getPoolAlias(), pool.token1ClassKey);
+
     if (poolTokenBalance.getQuantityTotal().isLessThan(roundedToken1Amount.abs())) {
       throw new ConflictError("Not enough liquidity available in pool");
     }

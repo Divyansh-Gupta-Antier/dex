@@ -30,6 +30,7 @@ export async function removePositionIfEmpty(
   poolHash: string,
   position: DexPositionData
 ) {
+  
   //  Fetch user positions
   const userPositions = await getUserPositionIds(ctx, ctx.callingUser, poolHash);
 
@@ -43,7 +44,9 @@ export async function removePositionIfEmpty(
   if (deleteUserPos) {
     const tickRange = genTickRange(position.tickLower, position.tickUpper);
     userPositions.removePosition(tickRange, position.positionId);
+
     await deleteChainObject(ctx, position);
+
     await putChainObject(ctx, userPositions);
   }
 }

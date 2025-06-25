@@ -15,6 +15,8 @@
 import { ConflictError } from "@gala-chain/api";
 import { GalaChainContext } from "@gala-chain/chaincode";
 import BigNumber from "bignumber.js";
+import { ConstructorFragment } from "ethers/lib/utils";
+import { copyFileSync } from "fs";
 
 import {
   Pool,
@@ -22,6 +24,7 @@ import {
   SwapState,
   TickData,
   computeSwapStep,
+  f18,
   nextInitialisedTickWithInSameWord,
   sqrtPriceToTick,
   tickToSqrtPrice
@@ -38,7 +41,7 @@ export async function processSwapSteps(
 ): Promise<SwapState> {
   while (
     // Continue while there's amount left to swap and price hasn't hit the limit
-    !state.amountSpecifiedRemaining.isEqualTo(0) &&
+    !f18(state.amountSpecifiedRemaining).isEqualTo(0) &&
     !state.sqrtPrice.isEqualTo(sqrtPriceLimit)
   ) {
     // Initialize step state
@@ -70,6 +73,7 @@ export async function processSwapSteps(
     step.sqrtPriceNext = tickToSqrtPrice(step.tickNext);
 
     // Compute the result of the swap step based on price movement
+
     [state.sqrtPrice, step.amountIn, step.amountOut, step.feeAmount] = computeSwapStep(
       state.sqrtPrice,
       (

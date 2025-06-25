@@ -22,6 +22,7 @@ import {
   transferToken
 } from "@gala-chain/chaincode";
 import BigNumber from "bignumber.js";
+import { Console } from "console";
 
 import {
   Pool,
@@ -64,17 +65,20 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
         sqrtPriceLimit.isGreaterThan(new BigNumber("0.000000000000000000054212146"))
       )
     )
-      throw new SlippageToleranceExceededError("SquarePriceLImit exceeds limit");
+      throw new SlippageToleranceExceededError("SquareRootPrice Limit Exceeds");
   } else {
+    console.log("Square toot price limit", JSON.stringify(sqrtPriceLimit));
+    console.log("pool.sqrt",JSON.stringify(pool.sqrtPrice));
     if (
       !(
         sqrtPriceLimit.isGreaterThan(pool.sqrtPrice) &&
         sqrtPriceLimit.isLessThan(new BigNumber("18446051000000000000"))
       )
     )
-      throw new SlippageToleranceExceededError("SquarePriceLImit exceeds limit");
+      throw new SlippageToleranceExceededError("SquareRootPrice Limit Exceeds");
   }
   const amountSpecified = dto.amount;
+  console.log("Amount specified",amountSpecified);
 
   if (amountSpecified.isEqualTo(0)) throw new ValidationFailedError("Invalid specified amount");
 
@@ -100,6 +104,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
   await processSwapSteps(ctx, state, pool, sqrtPriceLimit, exactInput, zeroForOne);
 
   const amounts = pool.swap(zeroForOne, state, amountSpecified);
+  console.log("Amounts from pool", amounts);
   const poolAlias = pool.getPoolAlias();
 
   //create tokenInstanceKeys
@@ -128,7 +133,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
     if (amount.lt(0)) {
       if (dto.amountOutMinimum && amount.gt(dto.amountOutMinimum)) {
         throw new SlippageToleranceExceededError(
-          `Slippage tolerance exceeded: minimum received tokens (${dto.amountInMaximum}) is less than actual received amount (${amount}).`
+          `Slippage tolerance exceeded: minimum received tokens (${dto.amountOutMinimum}) is less than actual received amount (${amount}).`
         );
       }
 
@@ -138,7 +143,11 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
         tokenInstanceKeys[index].getTokenClassKey()
       );
       const roundedAmount = new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs();
+      console.log("Rounded Amount", JSON.stringify(roundedAmount));
+      console.log("Pool Balance : ", JSON.stringify(poolTokenBalance.getQuantityTotal()));
+      console.log("True False check",poolTokenBalance.getQuantityTotal().isLessThan(roundedAmount) )
       if (poolTokenBalance.getQuantityTotal().isLessThan(roundedAmount)) {
+        console.log("%%%%%%%%%%");
         throw new ConflictError("Not enough liquidity available in pool");
       }
       if (roundedAmount.isZero()) {

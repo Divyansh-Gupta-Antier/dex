@@ -125,6 +125,10 @@ export function getNextSqrtPriceFromAmount0(
   amount: BigNumber,
   add: boolean
 ): BigNumber {
+  sqrtPrice = BigNumber(sqrtPrice.toFixed(25));
+  liquidity = BigNumber(liquidity.toFixed(25));
+  amount = BigNumber(amount.toFixed(25));
+
   return add
     ? liquidity.times(sqrtPrice).div(liquidity.plus(sqrtPrice.times(amount)))
     : liquidity.times(sqrtPrice).div(liquidity.minus(sqrtPrice.times(amount)));

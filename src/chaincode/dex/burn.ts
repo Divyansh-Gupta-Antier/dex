@@ -62,8 +62,8 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<DexOper
     dto.positionId
   );
 
-  if (!position)
-    throw new NotFoundError(`User doesn't hold any positions with this tick rangeData in thisData pool`);
+  // if (!position)
+  //   throw new NotFoundError(`User doesn't hold any positions with this tick rangeData in thisData pool`);
 
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());

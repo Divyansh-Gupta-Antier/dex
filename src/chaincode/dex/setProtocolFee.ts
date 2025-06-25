@@ -61,10 +61,12 @@ export async function configureDexFeeAddress(ctx: GalaChainContext, dto: Configu
   }
 
   const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+  console.log("idhar hit");
 
   if (ctx.clientIdentity.getMSPID() !== curatorOrgMsp) {
     throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
   }
+
   let protocolFeeConfig = await fetchDexProtocolFeeConfig(ctx);
 
   if (!protocolFeeConfig) {
@@ -76,5 +78,6 @@ export async function configureDexFeeAddress(ctx: GalaChainContext, dto: Configu
   }
 
   await putChainObject(ctx, protocolFeeConfig);
+
   return protocolFeeConfig;
 }
