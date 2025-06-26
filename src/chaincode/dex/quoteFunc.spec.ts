@@ -97,7 +97,15 @@ describe("Quote Functions", () => {
 
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
-      .savedState(pool, dexInstance, currencyInstance, dexClass, currencyClass, currencyPoolBalance, dexPoolBalance);
+      .savedState(
+        pool,
+        dexInstance,
+        currencyInstance,
+        dexClass,
+        currencyClass,
+        currencyPoolBalance,
+        dexPoolBalance
+      );
 
     const dto = new QuoteExactAmountDto(dexClassKey, currencyClassKey, fee, new BigNumber("1.3"), true);
 
@@ -135,7 +143,15 @@ describe("Quote Functions", () => {
 
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
-      .savedState(pool, dexInstance, currencyInstance, dexClass, currencyClass, currencyPoolBalance, dexPoolBalance);
+      .savedState(
+        pool,
+        dexInstance,
+        currencyInstance,
+        dexClass,
+        currencyClass,
+        currencyPoolBalance,
+        dexPoolBalance
+      );
 
     const dto = new QuoteExactAmountDto(dexClassKey, currencyClassKey, fee, new BigNumber("0"), true);
 
@@ -194,7 +210,15 @@ describe("Quote Functions", () => {
     //Given
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
-      .savedState(pool, dexInstance, currencyInstance, dexClass, currencyClass, currencyPoolBalance, dexPoolBalance);
+      .savedState(
+        pool,
+        dexInstance,
+        currencyInstance,
+        dexClass,
+        currencyClass,
+        currencyPoolBalance,
+        dexPoolBalance
+      );
 
     dexPoolBalance.addQuantity(new BigNumber("10"));
     currencyPoolBalance.addQuantity(new BigNumber("10"));
@@ -206,5 +230,60 @@ describe("Quote Functions", () => {
 
     //Then
     expect(res).toEqual(GalaChainResponse.Error(new ConflictError("Not enough liquidity available in pool")));
+  });
+
+  test("Should throw ConflictError if rounded token amount is zero", async () => {
+    //Given
+    const positionData = new DexPositionData(
+      pool.genPoolHash(),
+      "POSITION-ID",
+      76110,
+      75920,
+      dexClassKey,
+      currencyClassKey,
+      fee
+    );
+
+    const tickLowerData = new TickData(pool.genPoolHash(), 75920);
+    const tickUpperData = new TickData(pool.genPoolHash(), 76110);
+
+    pool.mint(positionData, tickLowerData, tickUpperData, new BigNumber("100000"));
+
+    dexPoolBalance.addQuantity(new BigNumber("1000"));
+    currencyPoolBalance.addQuantity(new BigNumber("1000"));
+
+    const { ctx, contract } = fixture(DexV3Contract)
+      .registeredUsers(users.testUser1)
+      .savedState(
+        pool,
+        dexInstance,
+        currencyInstance,
+        dexClass,
+        currencyClass,
+        currencyPoolBalance,
+        dexPoolBalance,
+        positionData,
+        tickLowerData,
+        tickUpperData
+      );
+
+    // Input amount is small enough to round to 0 after decimal adjustment
+    const dto = new QuoteExactAmountDto(
+      dexClassKey,
+      currencyClassKey,
+      fee,
+      new BigNumber("0.000000000000000001"), // Small value that rounds to 0
+      true
+    );
+
+    //When
+    const res = await contract.QuoteExactAmount(ctx, dto);
+
+    //Then
+    expect(res).toEqual(
+      GalaChainResponse.Error(
+        new ConflictError("Tokens to be traded cannot be zero but are token0: 0 and token1: 0")
+      )
+    );
   });
 });

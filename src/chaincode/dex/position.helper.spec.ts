@@ -23,7 +23,7 @@ import dex from "../test/dex";
 import { genTickRange } from "./dexUtils";
 import { fetchOrCreateDexPosition, fetchUserPositionInTickRange, getDexPosition } from "./position.helper";
 
-describe("Fetch or Create Dex Position", () => {
+describe("Position helpers ", () => {
   const fee = DexFeePercentageTypes.FEE_0_05_PERCENT;
 
   const currencyClassKey: TokenClassKey = currency.tokenClassKey();
@@ -42,89 +42,93 @@ describe("Fetch or Create Dex Position", () => {
     );
   });
 
-  it("Should fetch users position if exists", async () => {
-    //Given
-    const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
-    const positionId = "0xb3dc4b5";
+  describe("fetchOrCreateDexPosition test", () => {
+    it("Should fetch users position if exists", async () => {
+      //Given
+      const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
+      const positionId = "0xb3dc4b5";
 
-    positionOwner.addPosition("-887270:887270", positionId);
+      positionOwner.addPosition("-887270:887270", positionId);
 
-    const uniquekey = "dexkey345";
+      const uniquekey = "dexkey345";
 
-    const { ctx } = fixture(DexV3Contract)
-      .registeredUsers(users.testUser1)
-      .callingUser(users.testUser1)
-      .savedState(positionOwner);
+      const { ctx } = fixture(DexV3Contract)
+        .registeredUsers(users.testUser1)
+        .callingUser(users.testUser1)
+        .savedState(positionOwner);
 
-    //When
-    const res = await fetchOrCreateDexPosition(ctx, pool, -887270, 887270, uniquekey);
+      //When
+      const res = await fetchOrCreateDexPosition(ctx, pool, -887270, 887270, uniquekey);
 
-    const expectedRes = plainToInstance(DexPositionData, {
-      poolHash: pool.genPoolHash(),
-      positionId: "65550bd31423b5094e31e82fcc5856afd4c5bc220fbbb9ca7e85bf3352e87408",
-      tickUpper: -887270,
-      tickLower: 887270,
-      liquidity: new BigNumber("0"),
-      feeGrowthInside0Last: new BigNumber("0"),
-      feeGrowthInside1Last: new BigNumber("0"),
-      tokensOwed0: new BigNumber("0"),
-      tokensOwed1: new BigNumber("0"),
-      token0ClassKey: dexClassKey,
-      token1ClassKey: currencyClassKey,
-      fee: fee
+      const expectedRes = plainToInstance(DexPositionData, {
+        poolHash: pool.genPoolHash(),
+        positionId: "65550bd31423b5094e31e82fcc5856afd4c5bc220fbbb9ca7e85bf3352e87408",
+        tickUpper: -887270,
+        tickLower: 887270,
+        liquidity: new BigNumber("0"),
+        feeGrowthInside0Last: new BigNumber("0"),
+        feeGrowthInside1Last: new BigNumber("0"),
+        tokensOwed0: new BigNumber("0"),
+        tokensOwed1: new BigNumber("0"),
+        token0ClassKey: dexClassKey,
+        token1ClassKey: currencyClassKey,
+        fee: fee
+      });
+
+      //Then
+      expect(res).toMatchObject(expectedRes);
     });
 
-    //Then
-    expect(res).toMatchObject(expectedRes);
-  });
+    it("Should create new position if none exists", async () => {
+      //Given
+      const uniquekey = "dexkey123";
 
-  it("Should create new position if none exists", async () => {
-    //Given
-    const uniquekey = "dexkey123";
+      const { ctx } = fixture(DexV3Contract).registeredUsers(users.testUser1).callingUser(users.testUser1);
 
-    const { ctx } = fixture(DexV3Contract).registeredUsers(users.testUser1).callingUser(users.testUser1);
+      //When
+      const res = await fetchOrCreateDexPosition(ctx, pool, 76110, 75920, uniquekey);
 
-    //When
-    const res = await fetchOrCreateDexPosition(ctx, pool, 76110, 75920, uniquekey);
+      const expectedRes = plainToInstance(DexPositionData, {
+        poolHash: pool.genPoolHash(),
+        positionId: "af0e1d8886f3d76e9a4f969f82338db376a76d6defe3692514a83dd50da8842c",
+        tickUpper: 76110,
+        tickLower: 75920,
+        liquidity: new BigNumber("0"),
+        feeGrowthInside0Last: new BigNumber("0"),
+        feeGrowthInside1Last: new BigNumber("0"),
+        tokensOwed0: new BigNumber("0"),
+        tokensOwed1: new BigNumber("0"),
+        token0ClassKey: dexClassKey,
+        token1ClassKey: currencyClassKey,
+        fee: 500
+      });
 
-    const expectedRes = plainToInstance(DexPositionData, {
-      poolHash: pool.genPoolHash(),
-      positionId: "af0e1d8886f3d76e9a4f969f82338db376a76d6defe3692514a83dd50da8842c",
-      tickUpper: 76110,
-      tickLower: 75920,
-      liquidity: new BigNumber("0"),
-      feeGrowthInside0Last: new BigNumber("0"),
-      feeGrowthInside1Last: new BigNumber("0"),
-      tokensOwed0: new BigNumber("0"),
-      tokensOwed1: new BigNumber("0"),
-      token0ClassKey: dexClassKey,
-      token1ClassKey: currencyClassKey,
-      fee: 500
+      //Then
+      expect(res).toEqual(expectedRes);
     });
 
-    //Then
-    expect(res).toEqual(expectedRes);
-  });
+    test("Should throw NotFoundError if positionId is invalid for given range", async () => {
+      //Given
+      const uniquekey = "dexkey345";
+      const positionId = "0xb3dc4b5";
+      const invalidPostionId = "0xb3d435";
 
-  test("Should throw NotFoundError if positionId is invalid for given range", async () => {
-    //Given
-    const uniquekey = "dexkey345";
-    const positionId = "0xb3dc4b5";
-    const invalidPostionId = "0xb3d435";
+      const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
+      positionOwner.addPosition("-887270:887270", positionId);
 
-    const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
-    positionOwner.addPosition("-887270:887270", positionId);
+      //When
+      const { ctx } = fixture(DexV3Contract)
+        .registeredUsers(users.testUser1)
+        .callingUser(users.testUser1)
+        .savedState(positionOwner);
 
-    //When
-    const { ctx } = fixture(DexV3Contract)
-      .registeredUsers(users.testUser1)
-      .callingUser(users.testUser1)
-      .savedState(positionOwner);
-
-    //Then
-    expect(fetchOrCreateDexPosition(ctx, pool, -887270, 887270, uniquekey, invalidPostionId)).rejects.toThrow(
-      "Cannot find any position with the id 0xb3d435 in the tick range 887270:-887270 that belongs to client|testUser1 in this pool."
-    );
+      //Then
+      expect(
+        fetchOrCreateDexPosition(ctx, pool, -887270, 887270, uniquekey, invalidPostionId)
+      ).rejects.toThrow(
+        "Cannot find any position with the id 0xb3d435 in the tick range 887270:-887270 that belongs to client|testUser1 in this pool."
+      );
+    });
   });
 
   describe("fetchUserPositionInTickRange", () => {

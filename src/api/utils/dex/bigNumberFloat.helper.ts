@@ -1,4 +1,3 @@
-import { TokenClassKey } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 /**

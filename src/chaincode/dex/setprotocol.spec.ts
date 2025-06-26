@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { GalaChainResponse, GalaChainResponseType, NotFoundError, UnauthorizedError } from "@gala-chain/api";
-import { fixture, transactionSuccess, users, writesMap } from "@gala-chain/test";
+import { fixture, users, writesMap } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
 import { randomUUID } from "crypto";
 
@@ -21,20 +21,20 @@ import { ConfigureDexFeeAddressDto, DexFeeConfig, SetProtocolFeeDto, SetProtocol
 import { DexV3Contract } from "../DexV3Contract";
 import { configureDexFeeAddress, setProtocolFee } from "./setProtocolFee";
 
-describe("DEX Protocol Fee Config Functions", () => {
+describe("Dex Protocol Fee Config Functions", () => {
   test("Should update protocol fee if user is authorized", async () => {
     //Given
-    const currentFee = new DexFeeConfig([users.testUser1.identityKey], 0.2);
+    const currentFee = new DexFeeConfig([users.admin.identityKey], 0.2);
 
     const { ctx, contract } = fixture(DexV3Contract)
-      .registeredUsers(users.testUser1)
-      .caClientIdentity(users.testUser1.identityKey, "CuratorOrg")
+      .registeredUsers(users.admin)
+      .caClientIdentity(users.admin.identityKey, "CuratorOrg")
       .savedState(currentFee);
     const dto = new SetProtocolFeeDto(0.5);
 
     dto.uniqueKey = randomUUID();
 
-    dto.sign(users.testUser1.privateKey);
+    dto.sign(users.admin.privateKey);
 
     //When
     const res = await contract.SetProtocolFee(ctx, dto);
@@ -46,14 +46,14 @@ describe("DEX Protocol Fee Config Functions", () => {
   test("Should throw error if no fee config is found", async () => {
     //Given
     const { ctx, contract } = fixture(DexV3Contract)
-      .caClientIdentity(users.testUser1.identityKey, "CuratorOrg")
-      .registeredUsers(users.testUser1);
+      .caClientIdentity(users.admin.identityKey, "CuratorOrg")
+      .registeredUsers(users.admin);
 
     const dto = new SetProtocolFeeDto(0.5);
 
     dto.uniqueKey = randomUUID();
 
-    dto.sign(users.testUser1.privateKey);
+    dto.sign(users.admin.privateKey);
 
     //When
     const res = await contract.SetProtocolFee(ctx, dto);
@@ -78,7 +78,7 @@ describe("Configure Dex Fee Address", () => {
     const dto = new ConfigureDexFeeAddressDto();
     dto.newAuthorities = [];
 
-    const { ctx, contract } = fixture(DexV3Contract).registeredUsers(users.testUser1).savedState(currentFee);
+    const { ctx, contract } = fixture(DexV3Contract).registeredUsers(users.admin).savedState(currentFee);
 
     //When
     const res = await contract.ConfigureDexFeeAddress(ctx, dto);
@@ -99,22 +99,22 @@ describe("Configure Dex Fee Address", () => {
     const currentFee = new DexFeeConfig([], 0.2);
 
     const { ctx, contract } = fixture(DexV3Contract)
-      .registeredUsers(users.testUser1)
-      .caClientIdentity(users.testUser1.identityKey, "CuratorOrg")
+      .registeredUsers(users.admin)
+      .caClientIdentity(users.admin.identityKey, "CuratorOrg")
       .savedState(currentFee);
 
     const dto = new ConfigureDexFeeAddressDto();
     dto.newAuthorities = [users.testUser2.identityKey];
 
     dto.uniqueKey = randomUUID();
-    dto.sign(users.testUser1.privateKey);
+    dto.sign(users.admin.privateKey);
 
     const res = await contract.ConfigureDexFeeAddress(ctx, dto);
 
     //Then
     expect(res).toEqual(
       GalaChainResponse.Error(
-        new UnauthorizedError("CallingUser client|testUser1 is not authorized to create or update")
+        new UnauthorizedError(`CallingUser ${users.admin.identityKey} is not authorized to create or update`)
       )
     );
   });
@@ -124,11 +124,11 @@ describe("Configure Dex Fee Address", () => {
     const dto = new ConfigureDexFeeAddressDto();
     dto.newAuthorities = [users.testUser3.identityKey];
 
-    dto.sign(users.testUser1.privateKey);
+    dto.sign(users.admin.privateKey);
 
     const { ctx, getWrites } = fixture(DexV3Contract)
-      .caClientIdentity(users.testUser1.identityKey, "CuratorOrg")
-      .registeredUsers(users.testUser1);
+      .caClientIdentity(users.admin.identityKey, "CuratorOrg")
+      .registeredUsers(users.admin);
 
     //When
     const res = await configureDexFeeAddress(ctx, dto);
@@ -146,18 +146,18 @@ describe("Configure Dex Fee Address", () => {
 
   it("Should update authorities if config exists and user is authorized", async () => {
     //Given
-    const dexFeeConfig = new DexFeeConfig([users.testUser1.identityKey]);
+    const dexFeeConfig = new DexFeeConfig([users.admin.identityKey]);
 
     const { ctx, contract, getWrites } = fixture(DexV3Contract)
-      .registeredUsers(users.testUser1)
-      .caClientIdentity(users.testUser1.identityKey, "CuratorOrg")
+      .registeredUsers(users.admin)
+      .caClientIdentity(users.admin.identityKey, "CuratorOrg")
       .savedState(dexFeeConfig);
 
     const dto = new ConfigureDexFeeAddressDto();
     dto.newAuthorities = [users.testUser1.identityKey, users.testUser2.identityKey];
 
     dto.uniqueKey = randomUUID();
-    dto.sign(users.testUser1.privateKey);
+    dto.sign(users.admin.privateKey);
 
     //When
     await contract.ConfigureDexFeeAddress(ctx, dto);
@@ -173,10 +173,10 @@ describe("Configure Dex Fee Address", () => {
 
   it("Should throw UnauthorizedError if config exists and user is NOT authorized", async () => {
     //Given
-    const dexFeeConfig = new DexFeeConfig([users.testUser1.identityKey]);
+    const dexFeeConfig = new DexFeeConfig([users.admin.identityKey]);
 
     const { ctx, contract } = fixture(DexV3Contract)
-      .caClientIdentity(users.testUser1.identityKey, "CuratorOrg")
+      .caClientIdentity(users.admin.identityKey, "CuratorOrg")
       .registeredUsers(users.testUser2)
       .savedState(dexFeeConfig);
 

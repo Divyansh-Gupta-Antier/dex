@@ -36,7 +36,6 @@ import {
 } from "../../api";
 import { DexV3Contract } from "../DexV3Contract";
 import dex from "../test/dex";
-import { GetRemoveLiqEstimationResDto } from "./../../api/types/DexDtos";
 
 describe("Swap Test", () => {
   const fee = DexFeePercentageTypes.FEE_0_05_PERCENT;
@@ -78,11 +77,13 @@ describe("Swap Test", () => {
     currencyPoolBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalancePlain(),
       owner: pool.getPoolAlias()
+      //  quantity: new BigNumber("0")
     });
 
     dexPoolBalance = plainToInstance(TokenBalance, {
       ...dex.tokenBalancePlain(),
       owner: pool.getPoolAlias()
+      // quantity: new BigNumber("0")
     });
   });
 
@@ -171,6 +172,9 @@ describe("Swap Test", () => {
 
     pool.mint(positionData, tickLowerData, tickUpperData, new BigNumber("80000"));
 
+    currencyPoolBalance.addQuantity(new BigNumber("9000"));
+    dexPoolBalance.addQuantity(new BigNumber("9000"));
+
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
       .savedState(
@@ -193,7 +197,6 @@ describe("Swap Test", () => {
 
     //When
     const swapRes = await contract.Swap(ctx, dto);
-    console.log("Swap Response", swapRes);
 
     //Then
     expect(swapRes.Data).toMatchObject({
@@ -433,13 +436,12 @@ describe("Swap Test", () => {
     );
   });
 
-  test("It will revert if there is not enough liquidity available in the pool", async () => {
+  test("It will revert if there is no enough liquidity available in the pool", async () => {
     //Given
 
     const currentSqrtPrice = new BigNumber("44.71236");
-    const sqrtPriceLimit = currentSqrtPrice.multipliedBy(1.5);
+    const sqrtPriceLimit = currentSqrtPrice.multipliedBy(0.2);
 
-    //Adding liquiidty the pool
     const positionData = new DexPositionData(
       pool.genPoolHash(),
       "POSITION-ID",
@@ -449,10 +451,15 @@ describe("Swap Test", () => {
       currencyClassKey,
       fee
     );
+
     const tickLowerData = new TickData(pool.genPoolHash(), -887270);
+
     const tickUpperData = new TickData(pool.genPoolHash(), 887270);
 
     pool.mint(positionData, tickLowerData, tickUpperData, new BigNumber("80000"));
+
+    // currencyUserBalance.addQuantity(new BigNumber("700"));
+    // dexUserBalance.addQuantity(new BigNumber("700"));
 
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
@@ -464,29 +471,25 @@ describe("Swap Test", () => {
         pool,
         currencyPoolBalance,
         dexPoolBalance,
-        dexUserBalance
+        dexUserBalance,
+        currencyUserBalance
       );
 
-    const dto = new SwapDto(
-      dexClassKey,
-      currencyClassKey,
-      fee,
-      new BigNumber("-1250"),
-      false,
-      sqrtPriceLimit
-    );
+    currencyPoolBalance.subtractQuantity(new BigNumber("500"), ctx.txUnixTime);
+    dexPoolBalance.subtractQuantity(new BigNumber("500"), ctx.txUnixTime);
+
+    const dto = new SwapDto(dexClassKey, currencyClassKey, fee, new BigNumber("1.5"), true, sqrtPriceLimit);
 
     dto.uniqueKey = randomUUID();
 
     dto.sign(users.testUser1.privateKey);
 
-    currencyPoolBalance.subtractQuantity(new BigNumber("500"), ctx.txUnixTime);
-    dexPoolBalance.subtractQuantity(new BigNumber("500"), ctx.txUnixTime);
-
     //When
-    const res = await contract.Swap(ctx, dto);
+    const swapRes = await contract.Swap(ctx, dto);
 
-    expect(res).toEqual(GalaChainResponse.Error(new ConflictError("Not enough liquidity available in pool")));
+    expect(swapRes).toEqual(
+      GalaChainResponse.Error(new ConflictError("Not enough liquidity available in pool"))
+    );
   });
 
   test("Should throw error if amount specified is Zero", async () => {

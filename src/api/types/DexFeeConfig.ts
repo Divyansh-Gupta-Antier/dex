@@ -14,7 +14,7 @@
  */
 import { ChainObject, IsUserAlias, UserAlias } from "@gala-chain/api";
 import { Exclude } from "class-transformer";
-import { ArrayNotEmpty, IsNumber, IsString, Max, Min } from "class-validator";
+import { ArrayNotEmpty, IsNumber, Max, Min } from "class-validator";
 
 export class DexFeeConfig extends ChainObject {
   @Exclude()

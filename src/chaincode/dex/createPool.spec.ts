@@ -49,7 +49,7 @@ describe("CreatePool", () => {
   const fee = DexFeePercentageTypes.FEE_0_05_PERCENT;
 
   let pool: Pool;
- 
+
   pool = new Pool(
     dexClassKey.toString(),
     currencyClassKey.toString(),
@@ -107,7 +107,7 @@ describe("CreatePool", () => {
 
   it("Should create a new liquidity pool using a configured protocol fee", async () => {
     //Given
-    const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.admin.identityKey], 0.1);
+    const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.admin.identityKey], 0.3);
 
     const { ctx, contract, getWrites } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
@@ -134,13 +134,12 @@ describe("CreatePool", () => {
 
     // When
     const res = await contract.CreatePool(ctx, dto);
-    console.log("Response of create is ", res);
 
     const expectedPool = new Pool(
-      currencyClassKey.toStringKey(),
       dexClassKey.toStringKey(),
-      currencyClassKey,
+      currencyClassKey.toStringKey(),
       dexClassKey,
+      currencyClassKey,
       DexFeePercentageTypes.FEE_0_05_PERCENT,
       new BigNumber("1"),
       dexFeeConfig.protocolFee
@@ -155,8 +154,51 @@ describe("CreatePool", () => {
     );
 
     // Then
-   // expect(res).toEqual(GalaChainResponse.Success(expectedResponse));
+    expect(res).toEqual(GalaChainResponse.Success(expectedResponse));
     expect(getWrites()).toEqual(writesMap(expectedFeeThresholdUses, expectedPool));
+  });
+
+  it("Should create pool with default protocol fee when DexFeeConfig is not present", async () => {
+    //Given
+
+    const { ctx, contract } = fixture(DexV3Contract)
+      .registeredUsers(users.testUser1)
+      .savedState(currencyInstance, currencyClass, currencyBalance, dexInstance, dexClass, dexBalance);
+
+    const dto = new CreatePoolDto(
+      dexClassKey,
+      currencyClassKey,
+      DexFeePercentageTypes.FEE_0_3_PERCENT,
+      new BigNumber("1")
+    );
+
+    dto.uniqueKey = randomUUID();
+
+    dto.sign(users.testUser1.privateKey);
+
+    const expectedPool = new Pool(
+      dexClassKey.toStringKey(),
+      currencyClassKey.toStringKey(),
+      dexClassKey,
+      currencyClassKey,
+      DexFeePercentageTypes.FEE_0_3_PERCENT,
+      new BigNumber("1"),
+      0.1 // default protocol fee
+    );
+
+    const expectedResponse = new CreatePoolResDto(
+      dexClassKey,
+      currencyClassKey,
+      DexFeePercentageTypes.FEE_0_3_PERCENT,
+      expectedPool.genPoolHash(),
+      expectedPool.getPoolAlias()
+    );
+
+    //When
+    const res = await contract.CreatePool(ctx, dto);
+
+    //Then
+    expect(res).toEqual(GalaChainResponse.Success(expectedResponse));
   });
 
   test("It will revert if we create pool of same tokens", async () => {

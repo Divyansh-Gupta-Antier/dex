@@ -12,14 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, TokenClassKey, asValidUserAlias } from "@gala-chain/api";
+import { TokenClassKey } from "@gala-chain/api";
 import { GalaChainContext } from "@gala-chain/chaincode";
 import { fixture, transactionErrorMessageContains, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import {
-  DexFeeConfig,
   DexFeePercentageTypes,
   DexPositionData,
   GetAddLiquidityEstimationDto,

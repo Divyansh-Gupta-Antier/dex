@@ -18,11 +18,14 @@ import {
   TokenClass,
   TokenClassKey,
   TokenInstance,
-  asValidUserAlias
+  asValidUserAlias,
+  GalaChainResponse,
+  UnauthorizedError
 } from "@gala-chain/api";
 import { currency, fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
+import { randomUUID } from "crypto";
 
 import {
   CollectProtocolFeesDto,
@@ -33,20 +36,19 @@ import {
 } from "../../api";
 import { DexV3Contract } from "../DexV3Contract";
 import dex from "../test/dex";
-import { collectProtocolFees } from "./collectProtocolFees";
 
 describe("GetPosition", () => {
   const currencyClass: TokenClass = currency.tokenClass();
   const currencyClassKey: TokenClassKey = currency.tokenClassKey();
   const currencyInstance: TokenInstance = currency.tokenInstance();
-  let currBal: TokenBalance;
-  let userCurrBal: TokenBalance;
+  let currencyPoolBal: TokenBalance;
+  let currencyUserBalance: TokenBalance;
 
   const dexClass: TokenClass = dex.tokenClass();
   const dexClassKey: TokenClassKey = dex.tokenClassKey();
   const dexInstance: TokenInstance = dex.tokenInstance();
-  let dexBal: TokenBalance;
-  let userDexBal: TokenBalance;
+  let dexPoolBalance: TokenBalance;
+  let dexUserBalance: TokenBalance;
 
   let pool: Pool;
   let dexFeeConfig: DexFeeConfig;
@@ -61,20 +63,20 @@ describe("GetPosition", () => {
     pool.protocolFeesToken0 = new BigNumber(10);
     pool.protocolFeesToken1 = new BigNumber(10);
 
-    currBal = plainToInstance(TokenBalance, {
+    currencyPoolBal = plainToInstance(TokenBalance, {
       ...currency.tokenBalancePlain(),
       owner: pool.getPoolAlias()
     });
-    dexBal = plainToInstance(TokenBalance, {
+    dexPoolBalance = plainToInstance(TokenBalance, {
       ...dex.tokenBalancePlain(),
       owner: pool.getPoolAlias()
     });
-    userCurrBal = plainToInstance(TokenBalance, {
+    currencyUserBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalancePlain(),
       owner: asValidUserAlias(users.admin.identityKey),
       quantity: new BigNumber(0)
     });
-    userDexBal = plainToInstance(TokenBalance, {
+    dexUserBalance = plainToInstance(TokenBalance, {
       ...dex.tokenBalancePlain(),
       owner: asValidUserAlias(users.admin.identityKey),
       quantity: new BigNumber(0)
@@ -83,11 +85,11 @@ describe("GetPosition", () => {
     dexFeeConfig = new DexFeeConfig(authorities, 0.3);
   });
 
-  it("should transfer dex fee", async () => {
+  it("Should transfer dex fee", async () => {
     // Given
-    const { ctx, getWrites } = fixture(DexV3Contract)
+    const { ctx, contract, getWrites } = fixture(DexV3Contract)
       .registeredUsers(users.admin)
-      .callingUser(users.admin)
+      .caClientIdentity(users.admin.identityKey, "CuratorOrg")
       .savedState(
         pool,
         dexFeeConfig,
@@ -95,66 +97,87 @@ describe("GetPosition", () => {
         dexClass,
         currencyInstance,
         dexInstance,
-        currBal,
-        dexBal
+        currencyPoolBal,
+        dexPoolBalance
       );
     const writes = getWrites();
-
-    const collectProtocolFeesDto = new CollectProtocolFeesDto(
-      dexClassKey,
-      currencyClassKey,
-      DexFeePercentageTypes.FEE_1_PERCENT,
-      asValidUserAlias(users.admin.identityKey)
-    ).signed(users.admin.privateKey);
-
-    pool.protocolFeesToken0 = new BigNumber(0);
-    pool.protocolFeesToken1 = new BigNumber(0);
-    dexBal.subtractQuantity(new BigNumber(10), ctx.txUnixTime);
-    currBal.subtractQuantity(new BigNumber(10), ctx.txUnixTime);
-    userDexBal.addQuantity(new BigNumber(10));
-    userCurrBal.addQuantity(new BigNumber(10));
-
-    // When
-    const response = await collectProtocolFees(ctx, collectProtocolFeesDto);
-     await collectProtocolFees(ctx, collectProtocolFeesDto)
-      .then(() => ctx.stub.flushWrites())
-      .catch((e) => e);
-
-    // Then
-    expect(response).toEqual(new CollectProtocolFeesResDto(new BigNumber(10), new BigNumber(10)));
-    expect(getWrites()).toEqual(writesMap(pool, dexBal, currBal, userCurrBal, userDexBal));
-  });
-
-  it("should throw if DexFeeConfig is not defined", async () => {
-    // Given
-    const { ctx } = fixture(DexV3Contract)
-      .registeredUsers(users.admin)
-      .callingUser(users.admin)
-      .savedState(pool, currencyClass, dexClass, currencyInstance, dexInstance, currBal, dexBal); // no fee config
 
     const dto = new CollectProtocolFeesDto(
       dexClassKey,
       currencyClassKey,
       DexFeePercentageTypes.FEE_1_PERCENT,
       asValidUserAlias(users.admin.identityKey)
-    ).signed(users.admin.privateKey);
+    );
+
+    dto.uniqueKey = randomUUID();
+
+    dto.sign(users.admin.privateKey);
+
+    pool.protocolFeesToken0 = new BigNumber(0);
+    pool.protocolFeesToken1 = new BigNumber(0);
+    dexPoolBalance.subtractQuantity(new BigNumber(10), ctx.txUnixTime);
+    currencyPoolBal.subtractQuantity(new BigNumber(10), ctx.txUnixTime);
+    dexUserBalance.addQuantity(new BigNumber(10));
+    currencyUserBalance.addQuantity(new BigNumber(10));
 
     // When
-    await expect(collectProtocolFees(ctx, dto)).rejects.toThrow(
-      // Then
-      new NotFoundError(
-        "Protocol fee configuration has yet to be defined. Platform fee configuration is not defined."
+    const response = await contract.CollectProtocolFees(ctx, dto);
+
+    // Then
+    expect(response).toEqual(
+      GalaChainResponse.Success(new CollectProtocolFeesResDto(new BigNumber(10), new BigNumber(10)))
+    );
+    expect(getWrites()).toEqual(
+      writesMap(pool, dexPoolBalance, currencyPoolBal, currencyUserBalance, dexUserBalance)
+    );
+  });
+
+  it("Should throw if DexFeeConfig is not defined", async () => {
+    // Given
+    const { ctx, contract } = fixture(DexV3Contract)
+      .registeredUsers(users.admin)
+      .caClientIdentity(users.admin.identityKey, "CuratorOrg")
+      .savedState(
+        pool,
+        currencyClass,
+        dexClass,
+        currencyInstance,
+        dexInstance,
+        currencyPoolBal,
+        dexPoolBalance
+      ); // no fee config
+
+    const dto = new CollectProtocolFeesDto(
+      dexClassKey,
+      currencyClassKey,
+      DexFeePercentageTypes.FEE_1_PERCENT,
+      asValidUserAlias(users.admin.identityKey)
+    );
+
+    dto.uniqueKey = randomUUID();
+
+    dto.sign(users.admin.privateKey);
+
+    // When
+    const res = await contract.CollectProtocolFees(ctx, dto);
+    console.log("response collect protcol fee", res);
+    expect(res).toEqual(
+      GalaChainResponse.Error(
+        new NotFoundError(
+          "Protocol fee configuration has yet to be defined. Platform fee configuration is not defined."
+        )
       )
     );
   });
 
-  it("should throw if calling user is not authorized", async () => {
-    // Given
-    dexFeeConfig = new DexFeeConfig([asValidUserAlias("service|test-fail-user")], 0.3);
+  it("Should throw error if calling user is not authorized", async () => {
+    //Given
+    dexFeeConfig = new DexFeeConfig([users.testUser1.identityKey], 0.3);
 
-    const { ctx } = fixture(DexV3Contract)
+    //Writes
+    const { ctx, contract, getWrites } = fixture(DexV3Contract)
       .registeredUsers(users.admin)
-      .callingUser(users.admin)
+      .caClientIdentity(users.admin.identityKey, "CuratorOrg")
       .savedState(
         pool,
         dexFeeConfig,
@@ -162,8 +185,10 @@ describe("GetPosition", () => {
         dexClass,
         currencyInstance,
         dexInstance,
-        currBal,
-        dexBal
+        currencyPoolBal,
+        dexPoolBalance,
+        dexFeeConfig,
+        dexFeeConfig
       );
 
     const dto = new CollectProtocolFeesDto(
@@ -171,22 +196,27 @@ describe("GetPosition", () => {
       currencyClassKey,
       DexFeePercentageTypes.FEE_1_PERCENT,
       asValidUserAlias(users.admin.identityKey)
-    ).signed(users.admin.privateKey);
+    );
 
-    // When
-    await expect(collectProtocolFees(ctx, dto)).rejects.toThrow(
-      // Then
-      new NotFoundError(`CallingUser ${ctx.callingUser} is not authorized to create or update`)
+    dto.uniqueKey = randomUUID();
+
+    dto.sign(users.admin.privateKey);
+
+    const res = await contract.CollectProtocolFees(ctx, dto);
+
+    expect(res).toEqual(
+      GalaChainResponse.Error(
+        new UnauthorizedError("CallingUser client|admin is not authorized to create or update")
+      )
     );
   });
-
-  it("should not transfer more than pool balance", async () => {
+  it("Should not transfer more than pool balance", async () => {
     // Given
     pool.protocolFeesToken0 = new BigNumber(10000);
 
-    const { ctx, getWrites } = fixture(DexV3Contract)
+    const { ctx, contract, getWrites } = fixture(DexV3Contract)
       .registeredUsers(users.admin)
-      .callingUser(users.admin)
+      .caClientIdentity(users.admin.identityKey, "CuratorOrg")
       .savedState(
         pool,
         dexFeeConfig,
@@ -194,8 +224,8 @@ describe("GetPosition", () => {
         dexClass,
         currencyInstance,
         dexInstance,
-        currBal,
-        dexBal
+        currencyPoolBal,
+        dexPoolBalance
       );
     const writes = getWrites();
 
@@ -204,23 +234,30 @@ describe("GetPosition", () => {
       currencyClassKey,
       DexFeePercentageTypes.FEE_1_PERCENT,
       asValidUserAlias(users.admin.identityKey)
-    ).signed(users.admin.privateKey);
+    );
+
+    dto.uniqueKey = randomUUID();
+
+    dto.sign(users.admin.privateKey);
 
     pool.protocolFeesToken0 = new BigNumber(9000);
     pool.protocolFeesToken1 = new BigNumber(0);
-    dexBal.subtractQuantity(new BigNumber(1000), ctx.txUnixTime);
-    currBal.subtractQuantity(new BigNumber(10), ctx.txUnixTime);
-    userDexBal.addQuantity(new BigNumber(1000));
-    userCurrBal.addQuantity(new BigNumber(10));
+    dexPoolBalance.subtractQuantity(new BigNumber(1000), ctx.txUnixTime);
+    currencyPoolBal.subtractQuantity(new BigNumber(10), ctx.txUnixTime);
+    dexUserBalance.addQuantity(new BigNumber(1000));
+    currencyUserBalance.addQuantity(new BigNumber(10));
 
     // When
-    const response = await collectProtocolFees(ctx, dto);
-     await collectProtocolFees(ctx, dto)
-      .then(() => ctx.stub.flushWrites())
-      .catch((e) => e);
+    const res = await contract.CollectProtocolFees(ctx, dto);
+
+    ctx.stub.flushWrites();
 
     // Then
-    expect(response).toEqual(new CollectProtocolFeesResDto(new BigNumber(1000), new BigNumber(10)));
-    expect(getWrites()).toEqual(writesMap(pool, dexBal, currBal, userCurrBal, userDexBal));
+    expect(res).toEqual(
+      GalaChainResponse.Success(new CollectProtocolFeesResDto(new BigNumber(1000), new BigNumber(10)))
+    );
+    expect(getWrites()).toEqual(
+      writesMap(pool, dexPoolBalance, currencyPoolBal, currencyUserBalance, dexUserBalance)
+    );
   });
 });
