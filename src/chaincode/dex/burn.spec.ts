@@ -44,7 +44,7 @@ describe("Remove Liquidity Test", () => {
   let pool: Pool;
   let currencyPoolBalance: TokenBalance;
   let dexPoolBalance: TokenBalance;
- 
+
   beforeEach(() => {
     pool = new Pool(
       dexClassKey.toString(),
@@ -66,7 +66,7 @@ describe("Remove Liquidity Test", () => {
     });
   });
 
-  test("Position Owner should be able to remove liquidity", async () => {
+  it("Should allow the position owner to successfully remove liquidity from the pool", async () => {
     //Given
     const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
     positionOwner.addPosition("75920:76110", "POSITION-ID");
@@ -87,7 +87,6 @@ describe("Remove Liquidity Test", () => {
 
     pool.mint(positionData, tickLowerData, tickUpperData, new BigNumber("75646"));
 
-    //Adding Liquidity
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
       .savedState(
@@ -115,6 +114,7 @@ describe("Remove Liquidity Test", () => {
       new BigNumber("0"),
       "POSITION-ID"
     );
+    
     dto.uniqueKey = randomUUID();
 
     dto.sign(users.testUser1.privateKey);
@@ -158,7 +158,7 @@ describe("Remove Liquidity Test", () => {
     expect(burnRes).toEqual(transactionSuccess(expectedResponse));
   });
 
-  test("Remove Liquidity should throw error if liquidity checks fail", async () => {
+  it("Should throw error while removing liquidity if liquidity checks fail", async () => {
     //Given
     const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
     positionOwner.addPosition("75920:76110", "POSITION-ID");
@@ -335,7 +335,7 @@ describe("Remove Liquidity Test", () => {
     expect(burnRes).toEqual(transactionSuccess(expectedResponse));
   });
 
-  test("Should throw NotFoundError if position doesn't exist", async () => {
+  it("Should throw Error if position doesn't exist", async () => {
     //Given
     const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
     positionOwner.addPosition("75920:76110", "POSITION-ID-1");
@@ -387,8 +387,10 @@ describe("Remove Liquidity Test", () => {
 
     dto.sign(users.testUser1.privateKey);
 
+    //When
     const res = await contract.RemoveLiquidity(ctx, dto);
 
+    //Then
     expect(res).toEqual(
       GalaChainResponse.Error(
         new NotFoundError(
@@ -398,7 +400,7 @@ describe("Remove Liquidity Test", () => {
     );
   });
 
-  it("Should throw SlippageToleranceExceededError if returned amount0  received is below amount0min", async () => {
+  it("Should throw slippage tolerance exceed error if  amount0 received is below amount0min", async () => {
     //Given
     const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
     positionOwner.addPosition("75920:76110", "POSITION-ID");
@@ -419,7 +421,6 @@ describe("Remove Liquidity Test", () => {
 
     pool.mint(positionData, tickLowerData, tickUpperData, new BigNumber("75646"));
 
-    //Adding Liquidity
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
       .savedState(
@@ -464,7 +465,7 @@ describe("Remove Liquidity Test", () => {
     );
   });
 
-  it("Should throw SlippageToleranceExceededError if amount1  received is below amount1min", async () => {
+  it("Should throw slippage tolerance exceed if amount1  received is below amount1min", async () => {
     //Given
     const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
     positionOwner.addPosition("75920:76110", "POSITION-ID");
@@ -530,7 +531,7 @@ describe("Remove Liquidity Test", () => {
     );
   });
 
-  test("It Should handle zero burn amount gracefully", async () => {
+  it("Should handle zero burn amount gracefully", async () => {
     //Given
     const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
     positionOwner.addPosition("75920:76110", "POSITION-ID");
@@ -551,7 +552,6 @@ describe("Remove Liquidity Test", () => {
 
     pool.mint(positionData, tickLowerData, tickUpperData, new BigNumber("75646"));
 
-    //Adding Liquidity
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
       .savedState(

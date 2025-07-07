@@ -33,8 +33,6 @@ import dex from "../test/dex";
 import { genTickRange } from "./dexUtils";
 
 describe("Collect", () => {
-  const fee = DexFeePercentageTypes.FEE_0_05_PERCENT;
-
   const currencyInstance: TokenInstance = currency.tokenInstance();
   const currencyClass: TokenClass = currency.tokenClass();
   const currencyClassKey: TokenClassKey = currency.tokenClassKey();
@@ -42,6 +40,8 @@ describe("Collect", () => {
   const dexInstance: TokenInstance = dex.tokenInstance();
   const dexClass: TokenClass = dex.tokenClass();
   const dexClassKey: TokenClassKey = dex.tokenClassKey();
+
+  const fee = DexFeePercentageTypes.FEE_0_05_PERCENT;
 
   let pool: Pool;
   let positionData: DexPositionData;
@@ -52,6 +52,7 @@ describe("Collect", () => {
   let currencyPoolBalance: TokenBalance;
 
   beforeEach(() => {
+    //Given
     pool = new Pool(
       dexClassKey.toString(),
       currencyClassKey.toString(),
@@ -100,7 +101,7 @@ describe("Collect", () => {
     });
   });
 
-  it("Should Collect correct fees and update balances", async () => {
+  it("Should collect correct fees and update balances", async () => {
     //Given
     positionData.tokensOwed0 = new BigNumber("15");
     positionData.tokensOwed1 = new BigNumber("15");

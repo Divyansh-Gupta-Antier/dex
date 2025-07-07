@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 import {
+  GalaChainResponse,
   NotFoundError,
   TokenBalance,
   TokenClass,
   TokenClassKey,
   TokenInstance,
-  asValidUserAlias,
-  GalaChainResponse,
-  UnauthorizedError
+  UnauthorizedError,
+  asValidUserAlias
 } from "@gala-chain/api";
 import { currency, fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -52,6 +52,7 @@ describe("GetPosition", () => {
 
   let pool: Pool;
   let dexFeeConfig: DexFeeConfig;
+
   beforeEach(() => {
     // Given
     const token0 = dexClassKey.toStringKey();
@@ -100,7 +101,6 @@ describe("GetPosition", () => {
         currencyPoolBal,
         dexPoolBalance
       );
-    const writes = getWrites();
 
     const dto = new CollectProtocolFeesDto(
       dexClassKey,
@@ -160,7 +160,7 @@ describe("GetPosition", () => {
 
     // When
     const res = await contract.CollectProtocolFees(ctx, dto);
-    console.log("response collect protcol fee", res);
+
     expect(res).toEqual(
       GalaChainResponse.Error(
         new NotFoundError(
@@ -175,7 +175,7 @@ describe("GetPosition", () => {
     dexFeeConfig = new DexFeeConfig([users.testUser1.identityKey], 0.3);
 
     //Writes
-    const { ctx, contract, getWrites } = fixture(DexV3Contract)
+    const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.admin)
       .caClientIdentity(users.admin.identityKey, "CuratorOrg")
       .savedState(
@@ -210,6 +210,7 @@ describe("GetPosition", () => {
       )
     );
   });
+
   it("Should not transfer more than pool balance", async () => {
     // Given
     pool.protocolFeesToken0 = new BigNumber(10000);
@@ -227,7 +228,6 @@ describe("GetPosition", () => {
         currencyPoolBal,
         dexPoolBalance
       );
-    const writes = getWrites();
 
     const dto = new CollectProtocolFeesDto(
       dexClassKey,

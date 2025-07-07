@@ -34,6 +34,7 @@ describe("createPool", () => {
   let tickLowerData: TickData;
   let tickUpperData: TickData;
   let pool: Pool;
+
   const tokenClass0Properties = {
     collection: "TEST",
     category: "Token",
@@ -48,6 +49,7 @@ describe("createPool", () => {
   };
   const token0ClassKey = plainToInstance(TokenClassKey, tokenClass0Properties);
   const token1ClassKey = plainToInstance(TokenClassKey, tokenClass1Properties);
+ 
   beforeEach(() => {
     // Given
     const token0 = token0ClassKey.toStringKey();
@@ -82,7 +84,8 @@ describe("createPool", () => {
       tick: 100
     });
   });
-  test("getPoolData: should fetch pool data", async () => {
+
+  it("Should fetch pool data", async () => {
     // Given
     const { ctx, contract } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract)
       .registeredUsers(users.testUser1)
@@ -98,7 +101,7 @@ describe("createPool", () => {
     expect(response.Data).toStrictEqual(pool);
   });
 
-  test("getPoolData: should return undefined when the pool does not exist", async () => {
+  it("Should return undefined when the pool does not exist", async () => {
     // Given
     const { ctx, contract } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract).registeredUsers(
       users.testUser1
@@ -113,7 +116,7 @@ describe("createPool", () => {
     expect(response.Data).toBeUndefined();
   });
 
-  test("slot0: should return slot0 data if pool exists", async () => {
+  it("Should return slot0 data if pool exists", async () => {
     // Given
     const sqrtPrice = new BigNumber("1.414");
     const liquidity = new BigNumber("1000");
@@ -138,7 +141,7 @@ describe("createPool", () => {
     expect(res.Data?.grossPoolLiquidity.toString()).toBe(grossLiquidity.toString());
   });
 
-  test("slot0: should throw NotFoundError if pool does not exist", async () => {
+  it("Should throw NotFoundError if pool does not exist", async () => {
     // Given
     const { ctx, contract } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract).registeredUsers(
       users.testUser1
@@ -153,7 +156,7 @@ describe("createPool", () => {
     expect(res).toEqual(transactionErrorMessageContains("No pool for these tokens and fee exists"));
   });
 
-  test("getLiquidity: should return current liquidity of the pool if it exists", async () => {
+  it("Should return current liquidity of the pool if it exists", async () => {
     // Given
     const liquidity = new BigNumber("1000");
     pool.liquidity = liquidity;
@@ -171,7 +174,7 @@ describe("createPool", () => {
     expect(res.Data?.liquidity.toString()).toBe(liquidity.toString());
   });
 
-  test("getLiquidity: should throw NotFoundError if pool does not exist", async () => {
+  it("Should throw NotFoundError if pool does not exist", async () => {
     // Given
     const { ctx, contract } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract).registeredUsers(
       users.testUser1
@@ -186,7 +189,7 @@ describe("createPool", () => {
     expect(res).toEqual(transactionErrorMessageContains("No pool for these tokens and fee exists"));
   });
 
-  test("getAddLiquidityEstimation: should return estimated token amounts and liquidity", async () => {
+  it("Should return estimated token amounts and liquidity", async () => {
     // Given
     const amount = new BigNumber("1000");
     const tickLower = -100;
@@ -216,7 +219,7 @@ describe("createPool", () => {
     expect(result.Data?.liquidity.toString()).toBe("200510.41647902682527463");
   });
 
-  test("getAddLiquidityEstimation: should call getAmountForLiquidity with different zeroForOne and tick range", async () => {
+  it("Should call getAmountForLiquidity with different zeroForOne and tick range", async () => {
     // Given
     const amount = new BigNumber("1000");
     const tickLower = -10;

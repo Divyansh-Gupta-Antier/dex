@@ -51,7 +51,6 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<D
     dto.tickLower,
     dto.positionId
   );
-  if (!position) throw new NotFoundError(`User doesn't hold any positions with this tick range in this pool`);
 
   // Create token instance keys and fetch token decimals
   const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(TokenInstanceKey.fungibleKey);

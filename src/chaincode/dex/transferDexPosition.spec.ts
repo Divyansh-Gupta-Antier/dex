@@ -42,6 +42,7 @@ describe("Transfer Dex Position", () => {
   let pool: Pool;
 
   beforeEach(() => {
+    //Given
     pool = new Pool(
       dexClassKey.toString(),
       currencyClassKey.toString(),
@@ -52,7 +53,7 @@ describe("Transfer Dex Position", () => {
     );
   });
 
-  test("LP provider should be able to transfer his dex position", async () => {
+  it("Should allow the LP provider to transfer their DEX position", async () => {
     //Given
     const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
     positionOwner.addPosition("75920:76110", "POSITION-ID");
@@ -116,7 +117,7 @@ describe("Transfer Dex Position", () => {
     expect(getWrites()).toEqual(writesMap(expectedOldPosition, expectedNewPosition));
   });
 
-  test("It will revert if position is not found", async () => {
+  it("Should revert if position is not found", async () => {
     //Given
     const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());
     positionOwner.addPosition("75920:76110", "POSITION-ID");

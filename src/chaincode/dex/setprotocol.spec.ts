@@ -22,7 +22,7 @@ import { DexV3Contract } from "../DexV3Contract";
 import { configureDexFeeAddress, setProtocolFee } from "./setProtocolFee";
 
 describe("Dex Protocol Fee Config Functions", () => {
-  test("Should update protocol fee if user is authorized", async () => {
+  it("Should update protocol fee if user is authorized", async () => {
     //Given
     const currentFee = new DexFeeConfig([users.admin.identityKey], 0.2);
 
@@ -43,7 +43,7 @@ describe("Dex Protocol Fee Config Functions", () => {
     expect(res).toEqual(GalaChainResponse.Success(new SetProtocolFeeResDto(0.5)));
   });
 
-  test("Should throw error if no fee config is found", async () => {
+  it("Should throw error if no fee config is found", async () => {
     //Given
     const { ctx, contract } = fixture(DexV3Contract)
       .caClientIdentity(users.admin.identityKey, "CuratorOrg")
@@ -70,7 +70,7 @@ describe("Dex Protocol Fee Config Functions", () => {
 });
 
 describe("Configure Dex Fee Address", () => {
-  test("Should throw error if newAuthorities is empty", async () => {
+  it("Should throw error if newAuthorities is empty", async () => {
     //Given
 
     const currentFee = new DexFeeConfig([users.testUser1.identityKey], 0.2);
@@ -119,7 +119,7 @@ describe("Configure Dex Fee Address", () => {
     );
   });
 
-  test("Creates new fee config if none exists and user is curator", async () => {
+  it("Creates new fee config if none exists and user is curator", async () => {
     //Given
     const dto = new ConfigureDexFeeAddressDto();
     dto.newAuthorities = [users.testUser3.identityKey];
@@ -131,7 +131,7 @@ describe("Configure Dex Fee Address", () => {
       .registeredUsers(users.admin);
 
     //When
-    const res = await configureDexFeeAddress(ctx, dto);
+    await configureDexFeeAddress(ctx, dto);
 
     await ctx.stub.flushWrites();
 
@@ -171,7 +171,7 @@ describe("Configure Dex Fee Address", () => {
     expect(getWrites()).toEqual(writesMap(expectedConfig));
   });
 
-  it("Should throw UnauthorizedError if config exists and user is NOT authorized", async () => {
+  it("Should throw error if config exists and user is NOT authorized", async () => {
     //Given
     const dexFeeConfig = new DexFeeConfig([users.admin.identityKey]);
 

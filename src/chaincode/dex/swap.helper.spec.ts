@@ -33,6 +33,7 @@ describe("ProcessSwapSteps", () => {
   let pool: Pool;
 
   beforeEach(() => {
+    //Given
     pool = new Pool(
       dexClassKey.toString(),
       currencyClassKey.toString(),
@@ -103,7 +104,6 @@ describe("ProcessSwapSteps", () => {
 
     //When
     const result = await processSwapSteps(ctx, state, pool, new BigNumber("44"), true, true);
-    console.log("Result : ", JSON.stringify(result));
 
     //Then
 

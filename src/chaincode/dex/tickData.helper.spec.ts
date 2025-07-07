@@ -22,7 +22,7 @@ import dex from "../test/dex";
 import { fetchOrCreateTickDataPair } from "./tickData.helper";
 
 describe("Tick Data Helper", () => {
-  test("It will create new tick data pair if it does not exists", async () => {
+  it("Should create new tick data pair if it does not exists", async () => {
     //Given
     const poolHash = "dummyhash1234567890abcdef";
     const tickLower = 75920;
@@ -43,7 +43,7 @@ describe("Tick Data Helper", () => {
     });
   });
 
-  test("It will return existing tick data pair if it exists", async () => {
+  it("Should return existing tick data pair if it exists", async () => {
     //Given
     const fee = DexFeePercentageTypes.FEE_0_05_PERCENT;
     const initialSqrtPrice = new BigNumber("44.71236");

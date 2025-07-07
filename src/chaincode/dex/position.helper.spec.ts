@@ -31,7 +31,9 @@ describe("Position helpers ", () => {
   const dexClassKey: TokenClassKey = dex.tokenClassKey();
 
   let pool: Pool;
+
   beforeEach(() => {
+    //Given
     pool = new Pool(
       dexClassKey.toString(),
       currencyClassKey.toString(),
@@ -107,7 +109,7 @@ describe("Position helpers ", () => {
       expect(res).toEqual(expectedRes);
     });
 
-    test("Should throw NotFoundError if positionId is invalid for given range", async () => {
+    test("Should throw error if positionId is invalid for given range", async () => {
       //Given
       const uniquekey = "dexkey345";
       const positionId = "0xb3dc4b5";
@@ -175,7 +177,7 @@ describe("Position helpers ", () => {
       expect(res).toEqual(expectedRes);
     });
 
-    it("Should throw NotFoundError if positionId does not match tick range", async () => {
+    it("Should throw error if positionId does not match tick range", async () => {
       //Given
       const positionId = "a3f9b7c2";
       const positionOwner = new DexPositionOwner(users.testUser1.identityKey, pool.genPoolHash());

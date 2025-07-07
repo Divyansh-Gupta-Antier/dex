@@ -78,7 +78,7 @@ describe("GetPosition", () => {
     positionOwnerData.addPosition("0:100", "test-position-id");
   });
 
-  test("should fetch position data", async () => {
+  it("Should fetch position data", async () => {
     // Given
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
@@ -109,7 +109,7 @@ describe("GetPosition", () => {
     expect(response.Data).toStrictEqual(positionData);
   });
 
-  test("should update the tokens owed in the position", async () => {
+  it("Should update the tokens owed in the position", async () => {
     // Given
     pool.feeGrowthGlobal0 = new BigNumber(10);
     pool.feeGrowthGlobal1 = new BigNumber(10);
@@ -151,7 +151,7 @@ describe("GetPosition", () => {
     expect(response.Data).toStrictEqual(updatedPosition);
   });
 
-  test("should return undefined when the pool does not exist", async () => {
+  it("Should return undefined when the pool does not exist", async () => {
     // Given
     const { ctx, contract } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract).registeredUsers(
       users.testUser1

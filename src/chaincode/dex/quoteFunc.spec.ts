@@ -162,7 +162,7 @@ describe("Quote Functions", () => {
     expect(res).toEqual(GalaChainResponse.Error(new ValidationFailedError("Invalid specified amount")));
   });
 
-  it("Should throw ConflictError if not enough token0 liquidity", async () => {
+  it("Should throw error if not enough token0 liquidity", async () => {
     //Given
 
     const positionData = new DexPositionData(
@@ -206,7 +206,7 @@ describe("Quote Functions", () => {
     expect(res).toEqual(GalaChainResponse.Error(new ConflictError("Not enough liquidity available in pool")));
   });
 
-  test("Should throw ConflictError if not enough token1 liquidity", async () => {
+  it("Should throw error if not enough token1 liquidity", async () => {
     //Given
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
@@ -232,7 +232,7 @@ describe("Quote Functions", () => {
     expect(res).toEqual(GalaChainResponse.Error(new ConflictError("Not enough liquidity available in pool")));
   });
 
-  test("Should throw ConflictError if rounded token amount is zero", async () => {
+  it("Should throw error if rounded token amount is zero", async () => {
     //Given
     const positionData = new DexPositionData(
       pool.genPoolHash(),

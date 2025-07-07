@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import {
-  ConflictError,
   FeeThresholdUses,
   GalaChainResponse,
   TokenBalance,
@@ -27,7 +26,6 @@ import { GalaChainContext } from "@gala-chain/chaincode";
 import { currency, fixture, transactionError, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
-import { clear } from "console";
 import { randomUUID } from "crypto";
 
 import { CreatePoolDto, CreatePoolResDto, DexFeeConfig, DexFeePercentageTypes, Pool } from "../../api/";
@@ -48,9 +46,7 @@ describe("CreatePool", () => {
 
   const fee = DexFeePercentageTypes.FEE_0_05_PERCENT;
 
-  let pool: Pool;
-
-  pool = new Pool(
+  const pool = new Pool(
     dexClassKey.toString(),
     currencyClassKey.toString(),
     dexClassKey,
@@ -201,7 +197,7 @@ describe("CreatePool", () => {
     expect(res).toEqual(GalaChainResponse.Success(expectedResponse));
   });
 
-  test("It will revert if we create pool of same tokens", async () => {
+  it("should revert if we create pool of same tokens", async () => {
     //Given
     const dto = new CreatePoolDto(currencyClassKey, currencyClassKey, 500, new BigNumber("10"));
 
@@ -244,7 +240,7 @@ describe("CreatePool", () => {
     );
   });
 
-  it("Will throw Conflict Error if pool is already created", async () => {
+  it("Should throw Conflict Error if pool is already created", async () => {
     //Given
     const dto = new CreatePoolDto(dexClassKey, currencyClassKey, 500, new BigNumber("44.71236"));
 

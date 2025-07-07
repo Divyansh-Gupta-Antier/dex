@@ -34,11 +34,13 @@ describe("GetPosition", () => {
 
   const dexClass: TokenClass = dex.tokenClass();
   const dexClassKey: TokenClassKey = dex.tokenClassKey();
+
   let positionData: DexPositionData;
   let positionOwnerData: DexPositionOwner;
   let tickLowerData: TickData;
   let tickUpperData: TickData;
   let pool: Pool;
+
   beforeEach(() => {
     // Given
     const token0 = dexClassKey.toStringKey();
@@ -77,7 +79,7 @@ describe("GetPosition", () => {
     positionOwnerData.addPosition("0:100", "test-position-id");
   });
 
-  test("should fetch position data along with its metadata", async () => {
+  it("Should fetch position data along with its metadata", async () => {
     // Given
     const { ctx, contract } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1)
@@ -105,7 +107,7 @@ describe("GetPosition", () => {
     expect(response.Data?.positions[0].token1Symbol).toStrictEqual(currencyClass.symbol);
   });
 
-  test("should fetch multiple positions", async () => {
+  it("Should fetch multiple positions", async () => {
     // Given
     const secondPositionData = plainToInstance(DexPositionData, {
       ...positionData,
@@ -138,7 +140,7 @@ describe("GetPosition", () => {
     expect(response.Data?.positions[1].poolHash).toStrictEqual(secondPositionData.poolHash);
   });
 
-  test("should fetch next set of positions based on bookmark", async () => {
+  it("Should fetch next set of positions based on bookmark", async () => {
     // Given
     const secondPositionData = plainToInstance(DexPositionData, {
       ...positionData,
@@ -169,7 +171,7 @@ describe("GetPosition", () => {
     expect(response.Data?.positions[0].poolHash).toStrictEqual(secondPositionData.poolHash);
   });
 
-  test("should check for invalid bookmarks", async () => {
+  it("Should check for invalid bookmarks", async () => {
     // Given
     const secondPositionData = plainToInstance(DexPositionData, {
       ...positionData,

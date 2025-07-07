@@ -31,8 +31,6 @@ import { DexV3Contract } from "../DexV3Contract";
 import dex from "../test/dex";
 
 describe("Burn Estimate Test", () => {
-  const fee = DexFeePercentageTypes.FEE_0_05_PERCENT;
-
   const currencyInstance: TokenInstance = currency.tokenInstance();
   const currencyClassKey: TokenClassKey = currency.tokenClassKey();
   const currencyClass: TokenClass = currency.tokenClass();
@@ -41,11 +39,15 @@ describe("Burn Estimate Test", () => {
   const dexClassKey: TokenClassKey = dex.tokenClassKey();
   const dexClass: TokenClass = dex.tokenClass();
 
+  const fee = DexFeePercentageTypes.FEE_0_05_PERCENT;
+
   let pool: Pool;
   let currencyPoolBalance: TokenBalance;
   let dexPoolBalance: TokenBalance;
 
   beforeEach(() => {
+    //Given
+
     pool = new Pool(
       dexClassKey.toString(),
       currencyClassKey.toString(),

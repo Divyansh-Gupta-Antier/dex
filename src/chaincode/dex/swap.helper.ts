@@ -15,8 +15,6 @@
 import { ConflictError } from "@gala-chain/api";
 import { GalaChainContext } from "@gala-chain/chaincode";
 import BigNumber from "bignumber.js";
-import { ConstructorFragment } from "ethers/lib/utils";
-import { copyFileSync } from "fs";
 
 import {
   Pool,

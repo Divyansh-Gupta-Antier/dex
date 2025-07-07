@@ -30,7 +30,7 @@ import { genTickRange } from "./dexUtils";
 import { getPositionById } from "./getPositionById";
 import { removePositionIfEmpty } from "./removePositionIfEmpty";
 
-describe("Remove Position if Empty", () => {
+describe("Remove Position if Empty", () =>{
   const currencyClassKey: TokenClassKey = currency.tokenClassKey();
   const dexClassKey: TokenClassKey = dex.tokenClassKey();
 
@@ -39,6 +39,7 @@ describe("Remove Position if Empty", () => {
   let pool: Pool;
 
   beforeEach(() => {
+    //Given
     pool = new Pool(
       dexClassKey.toString(),
       currencyClassKey.toString(),
@@ -85,7 +86,7 @@ describe("Remove Position if Empty", () => {
     await expect(getPositionById(ctx, dto)).rejects.toThrow(NotFoundError);
   });
 
-  test("Should NOT delete position if tokens or liquidity are above threashold ", async () => {
+  it("Should Not delete position if tokens or liquidity are above threashold ", async () => {
     //Given
     const position = new DexPositionData(
       pool.genPoolHash(),

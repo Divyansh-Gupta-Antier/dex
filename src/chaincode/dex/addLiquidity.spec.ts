@@ -56,6 +56,7 @@ describe("Add Liquidity", () => {
   let pool: Pool;
 
   beforeEach(() => {
+    //Given
     pool = new Pool(
       dexClassKey.toString(),
       currencyClassKey.toString(),
@@ -112,7 +113,7 @@ describe("Add Liquidity", () => {
     const launchpadAlias = users.testUser2.identityKey;
 
     //When
-    const { ctx, getWrites } = fixture(DexV3Contract)
+    const { ctx } = fixture(DexV3Contract)
       .registeredUsers(users.testUser1, users.testUser2)
       .callingUser(users.testUser2)
       .savedState(
@@ -125,13 +126,8 @@ describe("Add Liquidity", () => {
         dexLaunchpadBalance
       );
 
-    // const writes = getWrites();
-
     const res = await addLiquidity(ctx, dto, launchpadAlias);
 
-    const writes = getWrites();
-
-    console.log("Writes are", writes);
     const expectedResponse = plainToInstance(DexOperationResDto, {
       userBalanceDelta: plainToInstance(UserBalanceResDto, {
         token0Balance: {
@@ -250,7 +246,7 @@ describe("Add Liquidity", () => {
     });
   });
 
-  it("It should throw error  when tick lower is greater than upper tick", async () => {
+  it("Should throw error if tick lower is greater than upper tick", async () => {
     //Given
     const tickLower = 887280;
     const tickUpper = -324340;
@@ -344,7 +340,7 @@ describe("Add Liquidity", () => {
     expect(writes).toEqual({});
   });
 
-  test("Adding liquidity more than max liquidity will throw error", async () => {
+  test("Should throw error while adding liquidity more than max liquidity ", async () => {
     //Given
     const pa = 1700,
       pb = 1900;
@@ -393,7 +389,7 @@ describe("Add Liquidity", () => {
     );
   });
 
-  test("Adding liquidity equal to zero will throw an error", async () => {
+  it("Should throw error while adding liquidity equal to zero", async () => {
     //Given
     const pa = 1700,
       pb = 1900;
@@ -441,7 +437,7 @@ describe("Add Liquidity", () => {
     expect(addLiquidityRes).toEqual(GalaChainResponse.Error(new ValidationFailedError("Invalid Liquidity")));
   });
 
-  test("Add liquidity in range 1700 - 1900", async () => {
+  it("Should add liquidity in range 1700 - 1900", async () => {
     //Given
     const tickSpacing = feeAmountTickSpacing[fee];
 
@@ -528,7 +524,7 @@ describe("Add Liquidity", () => {
     expect(res).toEqual(transactionSuccess(expectedResponse));
   });
 
-  test("Slippage Tolerance exceeds", async () => {
+  it("Should throw errow when slippage tolerance exceeds", async () => {
     //Given
     const tickSpacing = feeAmountTickSpacing[fee];
 
@@ -558,7 +554,7 @@ describe("Add Liquidity", () => {
     const token0 = new BigNumber(AmountForLiquidity[0]);
     const token1 = new BigNumber(AmountForLiquidity[1]);
 
-    const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
+    const [token0Slipped] = slippedValue([token0, token1], slippage);
 
     const dto = new AddLiquidityDTO(
       dexClassKey,
@@ -589,7 +585,7 @@ describe("Add Liquidity", () => {
     );
   });
 
-  test("Slippage Tolerance exceeds : amout1min is greater than received amount", async () => {
+  it("Should throw slippage tolerance exceeds error if amout1min is greater than received amount", async () => {
     //Given
     const tickSpacing = feeAmountTickSpacing[fee];
 
@@ -619,7 +615,7 @@ describe("Add Liquidity", () => {
     const token0 = new BigNumber(AmountForLiquidity[0]);
     const token1 = new BigNumber(AmountForLiquidity[1]);
 
-    const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
+    const [token0Slipped] = slippedValue([token0, token1], slippage);
 
     const dto = new AddLiquidityDTO(
       dexClassKey,
@@ -650,7 +646,7 @@ describe("Add Liquidity", () => {
     );
   });
 
-  test("Slippage Tolerance exceeds : amout0min is greater than received amount", async () => {
+  it("Should throw slippage tolerance exceeds error if amout0min is greater than received amount", async () => {
     //Given
     const tickSpacing = feeAmountTickSpacing[fee];
 
@@ -680,7 +676,7 @@ describe("Add Liquidity", () => {
     const token0 = new BigNumber(AmountForLiquidity[0]);
     const token1 = new BigNumber(AmountForLiquidity[1]);
 
-    const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
+    const [token0Slipped] = slippedValue([token0, token1], slippage);
 
     const dto = new AddLiquidityDTO(
       dexClassKey,

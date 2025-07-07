@@ -64,7 +64,7 @@ describe("GetPositionById", () => {
     });
   });
 
-  it("should return DexPositionData when found", async () => {
+  it("Should return DexPositionData when found", async () => {
     // Given
     const { ctx, contract } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract).savedState(
       positionData
@@ -83,7 +83,7 @@ describe("GetPositionById", () => {
     expect(result.Data).toStrictEqual(positionData);
   });
 
-  it("should throw an error when DexPositionData is not found", async () => {
+  it("Should throw an error when DexPositionData is not found", async () => {
     // Given
     const { ctx, contract } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract).savedState();
 
