@@ -81,6 +81,15 @@ export async function processSwapSteps(
       state.sqrtPrice
     );
 
+    console.log("step.tickNext", step.tickNext);
+    // console.log("tick to sqrt PRice", JSON.stringify(tickToSqrtPrice(-7295)))
+    // console.log("cur tick", sqrtPriceToTick(new BigNumber("0.6943828845843845")))
+    // console.log("tick at little less", sqrtPriceToTick(new BigNumber("0.6943828845843844")))
+    // console.log("pool.bitmap", JSON.stringify(pool.bitmap));
+    // console.log("state.tick", state.tick);
+    // console.log("pool.tickSpacing", pool.tickSpacing);
+    // console.log("zeroForOne", zeroForOne);
+
     // Reject if next tick is out of bounds
     if (step.tickNext < TickData.MIN_TICK || step.tickNext > TickData.MAX_TICK) {
       throw new ConflictError("Not enough liquidity available in pool");

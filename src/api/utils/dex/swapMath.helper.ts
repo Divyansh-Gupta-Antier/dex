@@ -51,6 +51,11 @@ export function computeSwapStep(
 
   //define direction
   const zeroForOne = sqrtPriceCurrent.isGreaterThanOrEqualTo(sqrtPriceTarget);
+  console.log("sqrtPriceCurrent inside", JSON.stringify(sqrtPriceCurrent));
+  console.log("sqrtPriceTarget inside", JSON.stringify(sqrtPriceTarget));
+  console.log("liquidity inside", JSON.stringify(liquidity));
+  console.log("amountRemaining inside", JSON.stringify(amountRemaining));
+  console.log("fee inside", fee);
   const exactInput = amountRemaining.isGreaterThanOrEqualTo(0);
   if (exactInput) {
     const amountRemainingLessFee = amountRemaining.times(FEE_PIPS - fee).dividedBy(FEE_PIPS);

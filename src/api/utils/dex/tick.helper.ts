@@ -39,7 +39,11 @@ export function tickToSqrtPrice(tick: number): BigNumber {
  *  @return tick The greatest tick for which the ratio is less than or equal to the input ratio
  */
 export function sqrtPriceToTick(sqrtPrice: BigNumber): number {
-  return Number((Math.log(sqrtPrice.toNumber() ** 2) / Math.log(1.0001)).toFixed(0));
+  const tick = Number((Math.log(sqrtPrice.toNumber() ** 2) / Math.log(1.0001)).toFixed(0));
+  const minimumSqrtPriceForTick = tickToSqrtPrice(tick);
+  if (sqrtPrice.isLessThan(minimumSqrtPriceForTick)) {
+    return tick - 1;
+  } else return tick;
 }
 
 /**
@@ -51,7 +55,7 @@ export function sqrtPriceToTick(sqrtPrice: BigNumber): number {
 function position(tick: number): [word: number, position: number] {
   tick = Math.trunc(tick);
 
-  const wordPos = Math.trunc(tick / 256); // Equivalent to tick >> 8
+  const wordPos = Math.floor(tick / 256); // Equivalent to tick >> 8
 
   let bitPos = tick % 256; // Equivalent to tick % 256
   if (bitPos < 0) bitPos += 256; // Ensure it's always positive like uint8
@@ -115,14 +119,14 @@ export function nextInitialisedTickWithInSameWord(
 ): [number, boolean] {
   let compressed = Math.trunc(tick / tickSpacing);
   if (tick < 0 && tick % tickSpacing != 0) compressed--;
-  if (tick == sqrtPriceToTick(sqrtPrice)) {
-    const tickPrice = tickToSqrtPrice(tick);
-    if (lte && tickPrice.lt(sqrtPrice)) {
-      return [tick, isTickInitialized(tick, tickSpacing, bitmap)];
-    } else if (!lte && tickPrice.gt(sqrtPrice)) {
-      return [tick, isTickInitialized(tick, tickSpacing, bitmap)];
-    }
-  }
+  // if (tick == sqrtPriceToTick(sqrtPrice)) {
+  //   const tickPrice = tickToSqrtPrice(tick);
+  //   if (lte && tickPrice.lt(sqrtPrice)) {
+  //     return [tick, isTickInitialized(tick, tickSpacing, bitmap)];
+  //   } else if (!lte && tickPrice.gt(sqrtPrice)) {
+  //     return [tick, isTickInitialized(tick, tickSpacing, bitmap)];
+  //   }
+  // }
 
   if (lte) {
     const [word, pos] = position(compressed);

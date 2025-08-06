@@ -102,7 +102,9 @@ export function getNextSqrtPriceFromOutput(
 ): BigNumber {
   if (sqrtPrice.isLessThanOrEqualTo(0)) throw new ConflictError("Invalid Price");
   if (liquidity.isLessThanOrEqualTo(0)) throw new ConflictError("Invalid liquidity");
-
+  console.log(JSON.stringify([zeroForOne
+    ? getNextSqrtPriceFromAmount1(sqrtPrice, liquidity, amountOut, false)
+    : getNextSqrtPriceFromAmount0(sqrtPrice, liquidity, amountOut, false).toString(), sqrtPrice.toString(), "issye yhan h"]))
   return zeroForOne
     ? getNextSqrtPriceFromAmount1(sqrtPrice, liquidity, amountOut, false)
     : getNextSqrtPriceFromAmount0(sqrtPrice, liquidity, amountOut, false);
